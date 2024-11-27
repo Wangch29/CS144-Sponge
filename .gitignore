@@ -1,2 +1,79 @@
-/build
-/.ccls-cache
+# Compiled object files
+*.o
+*.obj
+*.lo
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# Compiled executable files
+*.exe
+*.out
+*.app
+
+# Debugging files
+*.gch
+*.pch
+*.dSYM/
+*.stackdump
+
+# Intermediate files
+*.ii
+*.s
+*.su
+
+# Dependency files
+*.d
+
+# Build directories
+build/
+cmake-build-debug/
+cmake-build-release/
+Debug/
+Release/
+dist/
+
+# IDE specific files
+# CLion
+.idea/
+*.iml
+
+# Visual Studio
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# CodeBlocks
+*.layout
+
+# Eclipse
+.settings/
+*.project
+*.cproject
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+
+# Other
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
+# System specific files
+.DS_Store
+Thumbs.db
+.idea/
