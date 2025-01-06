@@ -1,7 +1,9 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
+#include <inttypes.h>
 #include <string>
+#include <vector>
 
 //! \brief An in-order byte stream.
 
@@ -17,7 +19,21 @@ class ByteStream {
     // that's a sign that you probably want to keep exploring
     // different approaches.
 
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
+    std::vector<char> _buffer;
+    /** The first index to read from. */
+    size_t _start{0};
+    /** The first index to write to. */
+    size_t _end{0};
+    /** Capacity of buffer. */
+    std::size_t _capacity;
+    /** Total number of bytes that have been written. */
+    size_t _written_num{0};
+    /** Total number of bytes that have been read. */
+    size_t _read_num{0};
+    /** Flag indicating that the stream reaches its ending. */
+    bool _ending{false};
+    /** Flag indicating that the stream suffered an error. */
+    bool _error{false};
 
   public:
     //! Construct a stream with room for `capacity` bytes.
