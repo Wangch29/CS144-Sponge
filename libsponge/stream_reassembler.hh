@@ -4,16 +4,27 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
+#include <deque>
+#include <optional>
 #include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
-    // Your code here -- add private members as necessary.
-
     ByteStream _output;  //!< The reassembled in-order byte stream
-    size_t _capacity;    //!< The maximum number of bytes
+    /** The next unassembled index. */
+    uint64_t _next{0};
+    /** Unassembled bytes. */
+    std::deque<std::optional<char>> _unassembled_bytes;
+    /** Size of unassembled bytes. */
+    size_t _unassembled_size{0};
+    /** The maximum number of bytes. */
+    size_t _capacity;
+    /**  */
+    bool _eof;
+
+    void assemble_bytes();
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
