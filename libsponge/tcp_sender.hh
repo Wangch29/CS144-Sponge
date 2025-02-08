@@ -10,6 +10,47 @@
 #include <queue>
 
 //! \brief The "sender" part of a TCP implementation.
+class Timer {
+  private:
+    bool _open{false};
+    unsigned long long _passby_time{0};
+    unsigned int _retransmission_timeout{0};
+    unsigned int _retransmission_count{0};
+
+  public:
+    void set_retrans_timeout(unsigned int timeout) { _retransmission_timeout = timeout; }
+
+    void open() { _open = true; }
+
+    void close() { _open = false; }
+
+    unsigned int get_retransmission_count() const { return _retransmission_count; }
+
+    bool check_timeout(unsigned int time_elapsed, bool incr) {
+        if (!_open) {
+            return false;
+        }
+
+        _passby_time += time_elapsed;
+        if (_passby_time < _retransmission_timeout) {
+            return false;
+        }
+        
+        // Timeout.
+        _passby_time = 0;
+        if (incr) {
+            _retransmission_timeout *= 2;
+            _retransmission_count += 1;
+        }
+        return true;
+    }
+
+    void reset(unsigned int timeout) {
+        _retransmission_count = 0;
+        _passby_time = 0;
+        _retransmission_timeout = timeout;
+    }
+};
 
 //! Accepts a ByteStream, divides it up into segments and sends the
 //! segments, keeps track of which segments are still in-flight,
@@ -23,6 +64,12 @@ class TCPSender {
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
 
+    // _outstanding segments. Segments that sent but not commited.
+    std::queue<std::pair<uint64_t, TCPSegment>> _outstanding_segments{};
+
+    // Sent but not acknowledged bytes.
+    uint64_t _bytes_in_flight{0};
+
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
 
@@ -31,6 +78,15 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    // Left window size
+    uint16_t _window_size{1};
+
+    // Timer for retransmission.
+    Timer _timer{};
+
+    // Sent fin flag.
+    bool _sent_fin{false};
 
   public:
     //! Initialize a TCPSender
