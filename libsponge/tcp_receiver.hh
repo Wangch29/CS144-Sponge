@@ -24,8 +24,10 @@ class TCPReceiver {
     uint64_t _checkpoint{0};
     // Initial sequence number.
     WrappingInt32 _isn;
-    // FIN flag.
+    // Fin flag.
     bool _fin{false};
+    // Has received FIN flag or not.
+    bool _has_fin{false};
     // The maximum number of bytes we'll store.
     size_t _capacity;
 
@@ -35,7 +37,7 @@ class TCPReceiver {
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
     TCPReceiver(const size_t capacity)
-        : _reassembler(capacity), _ackno(std::nullopt), _checkpoint(0), _isn(0), _fin(false), _capacity(capacity) {}
+        : _reassembler(capacity), _ackno(std::nullopt), _checkpoint(0), _isn(0), _has_fin(false), _capacity(capacity) {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{

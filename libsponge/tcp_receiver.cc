@@ -24,21 +24,25 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     if (!_ackno.has_value()) {
         return;
     }
-    if (header.fin) {
-        _fin = true;
-    }
+    _fin = _fin | header.fin;
 
     auto before_reassem = _reassembler.stream_out().buffer_size();
 
     const Buffer &payload = seg.payload();
     WrappingInt32 seqno = header.syn ? header.seqno + 1 : header.seqno;
-    _checkpoint = unwrap(seqno, _isn, _checkpoint);
+    auto abs_idx = unwrap(seqno, _isn, _checkpoint);
+    if (abs_idx == 0) {  // Prevent abs_idx to be 0; when received multiple ack of syn.
+        return;
+    }
+    _checkpoint = abs_idx;
     _reassembler.push_substring(payload.copy(),  _checkpoint - 1, _fin);  // Absolute seqno to stream index
 
     auto after_reassem = _reassembler.stream_out().buffer_size();
     _ackno = std::make_optional(_ackno.value() + (after_reassem - before_reassem));
 
-    if (_fin && _reassembler.empty()) {
+    if (!_has_fin && _fin && _reassembler.empty()) {
+        // The first time FIN arrive.
+        _has_fin = true;
         _ackno = std::make_optional(_ackno.value() + 1);
     }
 }

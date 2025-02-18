@@ -38,8 +38,6 @@ void TCPSender::fill_window() {
         // Set TCP header.
         tcp.header().seqno = next_seqno();
         if (_next_seqno == 0 && remain_seg_length > 0) {
-            _timer.reset(_initial_retransmission_timeout);
-            _timer.open();
             tcp.header().syn = 1;
             remain_seg_length -= 1;
         }
@@ -60,6 +58,11 @@ void TCPSender::fill_window() {
         size_t seg_length = tcp.length_in_sequence_space();
         left_window_size =
             std::max(static_cast<std::uint16_t>(0), static_cast<std::uint16_t>(left_window_size - seg_length));
+        // Reset timer.
+        if (_outstanding_segments.empty() && seg_length > 0) {
+          _timer.reset(_initial_retransmission_timeout);
+          _timer.open();
+        }
         // Insert tcp.
         if (seg_length > 0) {
             _segments_out.push(tcp);
