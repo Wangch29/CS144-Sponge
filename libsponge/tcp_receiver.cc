@@ -1,5 +1,7 @@
 #include "tcp_receiver.hh"
+
 #include "wrapping_integers.hh"
+
 #include <cstdint>
 #include <optional>
 
@@ -9,44 +11,47 @@
 // automated checks run by `make check_lab2`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
+// Receiver has three status:
+// 1. Not received syn.
+// 2. received syn, and not received fin.
+// 3. received fin.
+//
+// So focus on these three status.
+// _received_syn can different between 1 and 2.
+// _reassembler.stream_out().input_ended() can different between 2 and 3.
+
 void TCPReceiver::segment_received(const TCPSegment &seg) {
-    // Process the received segment.
-    const auto &header = seg.header();
-
-    if (!_ackno.has_value() && header.syn) {
-        _isn = header.seqno;
-        _ackno = std::make_optional(header.seqno + 1);
+    // not received syned.
+    if (!_received_syn) {
+        if (!seg.header().syn) {
+            // Not syn, return;
+            return;
+        }
+        _received_syn = true;
+        _isn = seg.header().seqno;
     }
-    if (!_ackno.has_value()) {
-        return;
-    }
-    _fin = _fin | header.fin;
-
-    auto before_reassem = _reassembler.stream_out().buffer_size();
-
-    const Buffer &payload = seg.payload();
-    WrappingInt32 seqno = header.syn ? header.seqno + 1 : header.seqno;
-    auto abs_idx = unwrap(seqno, _isn, _checkpoint);
-    if (abs_idx == 0) {  // Prevent abs_idx to be 0; when received multiple ack of syn.
-        return;
-    }
-    _checkpoint = abs_idx;
-    _reassembler.push_substring(payload.copy(),  _checkpoint - 1, _fin);  // Absolute seqno to stream index
-
-    auto after_reassem = _reassembler.stream_out().buffer_size();
-    _ackno = std::make_optional(_ackno.value() + (after_reassem - before_reassem));
-
-    if (!_has_fin && _fin && _reassembler.empty()) {
-        // The first time FIN arrive.
-        _has_fin = true;
-        _ackno = std::make_optional(_ackno.value() + 1);
-    }
+    // Receiver's abs ackno.
+    uint64_t abs_ackno = _reassembler.stream_out().bytes_written() + 1;
+    // Seg's abs seqno.
+    uint64_t curr_abs_seqno = unwrap(seg.header().seqno, _isn, abs_ackno);
+    // Begin Idx in stream.
+    uint64_t stream_index = curr_abs_seqno - 1 + (seg.header().syn);
+    _reassembler.push_substring(seg.payload().copy(), stream_index, seg.header().fin);
 }
 
-optional<WrappingInt32> TCPReceiver::ackno() const { return _ackno; }
+optional<WrappingInt32> TCPReceiver::ackno() const { 
+    if (!_received_syn) {
+        return std::nullopt;
+    }
+    uint64_t abs_ackno = _reassembler.stream_out().bytes_written() + 1;
+    if (_reassembler.stream_out().input_ended()) {
+        abs_ackno += 1;
+    }
+    return WrappingInt32(_isn) + abs_ackno;
+}
 
 size_t TCPReceiver::window_size() const { return _capacity - stream_out().buffer_size(); }

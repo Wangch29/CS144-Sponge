@@ -19,6 +19,9 @@ StreamReassembler::StreamReassembler(const size_t capacity)
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
+    /* if (index == static_cast<size_t>(-1)) { */
+    /*     return; */
+    /* } */
     // Set new eof.
     _eof = _eof || eof;
     
@@ -28,6 +31,9 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     size_t valid_length = data.size() - data_begin_idx;
     // Index begins in _unassembly_bytes.
     int unassem_idx = (index > _next && valid_length != 0) ? index - _next : 0;
+    if (unassem_idx >= static_cast<int>(_capacity) || unassem_idx < 0) {
+        return;
+    }
     
     // Insert to _unassembled_bytes.
     if (unassem_idx + valid_length > _unassembled_bytes.size()) {

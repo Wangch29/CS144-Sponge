@@ -7,6 +7,7 @@
 #include "wrapping_integers.hh"
 
 #include <functional>
+#include <map>
 #include <queue>
 
 //! \brief The "sender" part of a TCP implementation.
@@ -35,7 +36,7 @@ class Timer {
         if (_passby_time < _retransmission_timeout) {
             return false;
         }
-        
+
         // Timeout.
         _passby_time = 0;
         if (incr) {

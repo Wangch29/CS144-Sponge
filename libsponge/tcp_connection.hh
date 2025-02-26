@@ -22,28 +22,21 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
-    // Lingering flag.
-    bool _lingering{false};
-    // Left lingering time.
-    size_t _lingering_time{0};
 
-    /** connection active flag. */
+    // connection active flag.
     bool _active{true};
 
-    /** Has sent syn or not. */
+    // Has sent syn or not.
     bool _sent_syn{false};
 
     // Time since last segment received.
     size_t _time_since_last_received{0};
 
-    /**
-     * Attach ack and window_size to the sender._segments_out.
-     * @param is_single_ack if just received a single ack segment.
-     */
-    void piggybacking_ack(bool is_single_ack);
-
-    /** Grip segments from _sender, and push them to _segments_out. */
+    // Grip segments from _sender, and push them to _segments_out.
     void send_segments();
+
+    // Send segment with rst flag.
+    void send_rst_segment();
 
   public:
     //! \name "Input" interface for the writer
